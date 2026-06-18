@@ -1,0 +1,16 @@
+# GYM OS — .gitignore
+
+# Archivos sensibles — NUNCA subir
+.env
+config.js
+
+# Node
+node_modules/
+npm-debug.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode (opcional — podés comentar si querés compartir settings)
+# .vscode/

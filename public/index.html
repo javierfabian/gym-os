@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GymOS — Administración</title>
+
+<!--
+  GYM OS v2.1
+  ============
+  Estructura del proyecto:
+    index.html        ← este archivo (estructura)
+    styles.css        ← todos los estilos
+    app.js            ← toda la lógica
+    config.js         ← claves generadas (NO subir a Git)
+    .env              ← variables de entorno (NO subir a Git)
+    generate-config.js ← script Node para generar config.js
+    .gitignore        ← excluye .env y config.js del repo
+
+  Primeros pasos en VS Code:
+    1. Abrí la carpeta del proyecto en VS Code
+    2. Instalá la extensión "Live Server" (ritwickdey.LiveServer)
+    3. Ejecutá: node generate-config.js
+    4. Hacé clic en "Go Live" en la barra inferior
+    5. Listo — el sistema corre en http://localhost:5500
+-->
+
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<body>
+
+<!-- LICENSE WALL -->
+<div class="lwall hidden" id="licenseWall">
+  <div class="lw-box">
+    <div class="lw-logo">GYM OS</div>
+    <div class="lw-sub">Sistema de Administración para Gimnasios</div>
+    <div class="lw-plans">
+      <div class="lw-plan">
+        <div class="lw-plan-name">Prueba Gratis</div>
+        <div class="lw-plan-price" style="color:var(--muted)">7 días <span>gratis</span></div>
+        <ul><li>Acceso completo</li><li>Sin tarjeta de crédito</li><li>Datos locales</li></ul>
+        <button class="btn btn-ghost" style="width:100%;margin-top:12px" onclick="startTrial()">Iniciar prueba</button>
+      </div>
+      <div class="lw-plan feat">
+        <div class="lw-badge a">RECOMENDADO</div>
+        <div class="lw-plan-name">Plan Básico</div>
+        <div class="lw-plan-price" style="color:var(--accent)">USD 9 <span>/ mes</span></div>
+        <ul><li>Socios ilimitados</li><li>Membresías y pagos</li><li>Agenda y clases</li><li>Avances corporales</li><li>Finanzas y gastos</li></ul>
+        <button class="btn btn-accent" style="width:100%;margin-top:12px" onclick="showKeyEntry('basic')">Ya tengo mi clave</button>
+      </div>
+      <div class="lw-plan prem">
+        <div class="lw-badge b">PREMIUM</div>
+        <div class="lw-plan-name">Plan Premium</div>
+        <div class="lw-plan-price" style="color:#8a96ff">USD 19 <span>/ mes</span></div>
+        <ul><li>Todo el Plan Básico</li><li>Informe PDF por socio</li><li>Backup JSON de datos</li><li>Reportes avanzados</li><li>Soporte prioritario</li></ul>
+        <button class="btn btn-blue" style="width:100%;margin-top:12px" onclick="showKeyEntry('premium')">Ya tengo mi clave</button>
+      </div>
+    </div>
+    <div class="lw-key-area" id="keyEntryArea" style="display:none">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:10px" id="keyEntryLabel">Ingresá tu clave:</p>
+      <div class="lw-key-row">
+        <input id="licKeyInput" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="19" oninput="formatKey(this)" onkeydown="if(event.key==='Enter')activateKey()">
+        <button class="btn btn-accent" onclick="activateKey()">Activar</button>
+      </div>
+      <div class="lw-key-msg" id="keyMsg"></div>
+      <div style="margin-top:8px;font-size:11px;color:var(--muted)">¿Sin clave? Contactá al desarrollador.</div>
+    </div>
+    <div style="margin-top:16px;font-size:11px;color:var(--muted)">GYM OS v2.1 · <a href="#" style="color:var(--accent);text-decoration:none" onclick="startTrial()">Probar 7 días gratis</a></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div style="display:flex;flex-direction:row;flex:1;overflow:hidden;position:relative" id="appWrapper">
+
+<div class="trial-banner hidden" id="trialBanner" style="position:absolute;top:0;left:0;right:0;z-index:50">
+  <span id="trialText">⏱ Período de prueba</span>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-accent" style="font-size:11px;padding:4px 11px" onclick="openLicWall()">Activar licencia</button>
+    <button class="btn btn-ghost" style="font-size:11px;padding:4px 9px" onclick="closeBanner()">✕</button>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo-area">
+    <div class="logo-drop" id="logoDrop">
+      <div class="logo-ph" id="logoPH"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>LOGO</div>
+      <img id="logoImg" src="" alt="" style="display:none">
+      <input type="file" id="logoInput" accept="image/*" style="display:none">
+    </div>
+    <div class="gym-name" id="gymName">GYM OS</div>
+    <div class="edit-name" onclick="editGymName()">✏ editar nombre</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-sec">General</div>
+    <div class="nav-item active" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg><span>Dashboard</span></div>
+    <div class="nav-item" data-page="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Socios</span></div>
+    <div class="nav-item" data-page="membresias"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span>Membresías</span></div>
+    <div class="nav-sec">Entrenamiento</div>
+    <div class="nav-item" data-page="programas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg><span>Programas</span></div>
+    <div class="nav-item" data-page="nutricion"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg><span>Nutrición</span></div>
+    <div class="nav-item" data-page="avances"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Avances</span></div>
+    <div class="nav-sec">Organización</div>
+    <div class="nav-item" data-page="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Agenda</span></div>
+    <div class="nav-sec">Finanzas</div>
+    <div class="nav-item" data-page="pagos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Pagos</span></div>
+    <div class="nav-item" data-page="finanzas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Finanzas</span></div>
+    <div class="nav-item" data-page="gastos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="2"/></svg><span>Gastos</span></div>
+    <div class="lic-badge trial" id="licBadge"><span id="licIcon">⏱</span><span id="licText">Prueba gratis</span></div>
+  </nav>
+</aside>
+
+<!-- MAIN -->
+<div class="main" id="mainArea">
+  <div class="topbar">
+    <button class="hamburger" id="hamburgerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <div class="topbar-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-right">
+      <span id="topDate" style="font-size:12px;color:var(--muted)"></span>
+      <button class="btn btn-ghost" id="btnNuevoCliente">+ Socio</button>
+      <button class="btn btn-accent" id="ctaBtn">+ Nuevo</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-label">Socios activos</div><div class="kpi-value" id="kpiSocios">0</div><div class="kpi-sub" style="color:var(--accent)">membresías vigentes</div></div>
+        <div class="kpi blue"><div class="kpi-label">Ingresos del mes</div><div class="kpi-value" id="kpiIngresos">$0</div><div class="kpi-sub">cobrado</div></div>
+        <div class="kpi"><div class="kpi-label">Clases hoy</div><div class="kpi-value" id="kpiClases">0</div><div class="kpi-sub">en agenda</div></div>
+        <div class="kpi red"><div class="kpi-label">Vencen esta semana</div><div class="kpi-value" id="kpiVencen">0</div><div class="kpi-sub" style="color:var(--accent3)">próx. 7 días</div></div>
+        <div class="kpi gray"><div class="kpi-label">Gastos del mes</div><div class="kpi-value" id="kpiGastos">$0</div></div>
+        <div class="kpi blue"><div class="kpi-label">Ganancia neta</div><div class="kpi-value" id="kpiGanancia">$0</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card"><div class="card-title">Ingresos — últimas 6 semanas</div><div class="bar-chart" id="barChart"></div><div style="display:flex;gap:6px;margin-top:7px" id="barLabels"></div></div>
+        <div class="card"><div class="card-title">Membresías por tipo</div><div id="memPie" style="display:flex;flex-direction:column;gap:8px"></div></div>
+      </div>
+      <div class="card"><div class="card-title">Actividad reciente</div><div class="timeline" id="actFeed"></div></div>
+    </div>
+
+    <!-- SOCIOS -->
+    <div class="page" id="page-clientes">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <input style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;width:220px" id="searchClient" placeholder="🔍 Nombre o DNI..." oninput="renderClients()">
+        <select style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none" id="filterMem" onchange="renderClients()"><option value="">Todas las membresías</option></select>
+        <select style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none" id="filterEst" onchange="renderClients()"><option value="">Todos los estados</option><option>Activo</option><option>Vencido</option><option>Sin membresía</option></select>
+      </div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th></th><th>Nombre</th><th>DNI</th><th>Membresía</th><th>Vence</th><th>Estado</th><th>Objetivo</th><th>Acciones</th></tr></thead>
+        <tbody id="clientsTable"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- MEMBRESÍAS -->
+    <div class="page" id="page-membresias">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px" id="memGrid"></div>
+      <div class="card">
+        <div class="card-title" id="memFormTitle">Nuevo plan</div>
+        <input type="hidden" id="mf_id">
+        <div class="fg">
+          <div class="fgrp"><label>Nombre del plan *</label><input id="mf_tipo" placeholder="Mensual, Trimestral..."></div>
+          <div class="fgrp"><label>Precio ($)</label><input id="mf_precio" type="number" min="0" placeholder="0"></div>
+          <div class="fgrp"><label>Duración (días)</label><input id="mf_dias" type="number" min="1" placeholder="30"></div>
+          <div class="fgrp"><label>Descripción</label><input id="mf_desc" placeholder="Incluye..."></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-accent" onclick="saveMembresia()">Guardar plan</button>
+          <button class="btn btn-ghost" id="mf_cancel" style="display:none" onclick="cancelMem()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRAMAS -->
+    <div class="page" id="page-programas">
+      <div style="display:flex;justify-content:flex-end"><button class="btn btn-accent" onclick="openModal('mPrograma')">+ Nuevo programa</button></div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Programa</th><th>Nivel</th><th>Días/sem</th><th>Objetivo</th><th>Modalidad</th><th>Socios</th><th>Acciones</th></tr></thead>
+        <tbody id="progsTable"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- NUTRICIÓN -->
+    <div class="page" id="page-nutricion">
+      <div style="display:flex;justify-content:flex-end"><button class="btn btn-accent" onclick="openModal('mNutri')">+ Nuevo plan</button></div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Plan</th><th>Objetivo</th><th>Kcal</th><th>Prot.</th><th>Carbos</th><th>Grasas</th><th>Socios</th><th>Acciones</th></tr></thead>
+        <tbody id="nutriTable"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- AVANCES -->
+    <div class="page" id="page-avances">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <select style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;width:230px" id="avSel" onchange="loadAvances()"><option value="">Seleccionar socio...</option></select>
+        <button class="btn btn-accent" onclick="openModal('mAvance')">+ Registrar medición</button>
+      </div>
+      <div id="avContent"><div class="card" style="text-align:center;color:var(--muted);padding:40px">Seleccioná un socio para ver sus avances.</div></div>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="page" id="page-agenda">
+      <div style="display:grid;grid-template-columns:310px 1fr;gap:18px">
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-title"><span id="calLabel"></span>
+              <div style="display:flex;gap:5px">
+                <button class="btn btn-ghost" style="padding:4px 9px" onclick="calPrev()">‹</button>
+                <button class="btn btn-ghost" style="padding:4px 9px" onclick="calNext()">›</button>
+              </div>
+            </div>
+            <div class="cal-grid" id="calHead"></div>
+            <div class="cal-grid" id="calBody"></div>
+          </div>
+          <button class="btn btn-accent" style="width:100%" onclick="openModal('mClase')">+ Agregar clase / turno</button>
+        </div>
+        <div class="card">
+          <div class="card-title" id="agendaTitle">Seleccioná un día</div>
+          <div id="agendaSlots"><div style="color:var(--muted);font-size:13px">Hacé clic en un día del calendario.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGOS -->
+    <div class="page" id="page-pagos">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none" id="pgMes" onchange="renderPagos()"></select>
+          <select style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none" id="pgEst" onchange="renderPagos()"><option value="">Todos</option><option>Pagado</option><option>Pendiente</option><option>Parcial</option><option>Devuelto</option></select>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" onclick="pdfPagos()">⬇ PDF</button>
+          <button class="btn btn-accent" onclick="openModal('mPago')">+ Registrar pago</button>
+        </div>
+      </div>
+      <div class="kpi-grid" style="max-width:650px">
+        <div class="kpi blue"><div class="kpi-label">Cobrado este mes</div><div class="kpi-value" id="pgTotal">$0</div></div>
+        <div class="kpi red"><div class="kpi-label">Pendiente total</div><div class="kpi-value" id="pgPend">$0</div></div>
+        <div class="kpi"><div class="kpi-label">Pagos este mes</div><div class="kpi-value" id="pgCount">0</div></div>
+      </div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Socio</th><th>Concepto</th><th>Monto</th><th>Método</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="pagosTable"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- FINANZAS -->
+    <div class="page" id="page-finanzas">
+      <div class="kpi-grid">
+        <div class="kpi blue"><div class="kpi-label">Ingresos año</div><div class="kpi-value" id="finIng">$0</div></div>
+        <div class="kpi red"><div class="kpi-label">Gastos año</div><div class="kpi-value" id="finGas">$0</div></div>
+        <div class="kpi"><div class="kpi-label">Ganancia neta</div><div class="kpi-value" id="finNet">$0</div></div>
+        <div class="kpi gray"><div class="kpi-label">Margen %</div><div class="kpi-value" id="finMar">0%</div></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end">
+        <button class="btn btn-ghost" onclick="pdfFinanzas()">⬇ PDF Reporte anual</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Balance mensual <span style="font-size:10px;color:var(--muted)">■ ingresos &nbsp;■ gastos</span></div>
+        <div class="bar-chart" id="finChart" style="height:110px"></div>
+        <div style="display:flex;gap:6px;margin-top:7px" id="finLabels"></div>
+      </div>
+      <div class="card"><div class="card-title">Resumen anual</div><div class="table-wrap"><table>
+        <thead><tr><th>Mes</th><th>Ingresos</th><th>Gastos</th><th>Ganancia</th><th>Margen</th></tr></thead>
+        <tbody id="finTable"></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- GASTOS -->
+    <div class="page" id="page-gastos">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <select style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none" id="gsMes" onchange="renderGastos()"></select>
+          <select style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none" id="gsCat" onchange="renderGastos()"><option value="">Todas las categorías</option><option>Alquiler</option><option>Sueldos / Honorarios</option><option>Equipamiento</option><option>Mantenimiento</option><option>Servicios (luz/agua/gas)</option><option>Marketing</option><option>Insumos</option><option>Seguros</option><option>Impuestos</option><option>Software</option><option>Otro</option></select>
+        </div>
+        <button class="btn btn-accent" onclick="openModal('mGasto')">+ Registrar gasto</button>
+      </div>
+      <div class="kpi-grid" style="max-width:420px">
+        <div class="kpi red"><div class="kpi-label">Total mes</div><div class="kpi-value" id="gsMesTot">$0</div></div>
+        <div class="kpi gray"><div class="kpi-label">Total año</div><div class="kpi-value" id="gsAnioTot">$0</div></div>
+      </div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Monto</th><th></th></tr></thead>
+        <tbody id="gastosTable"></tbody>
+      </table></div></div>
+    </div>
+
+  </div>
+</div>
+</div><!-- /appWrapper -->
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOv"></div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bn-item active" data-page="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Inicio</div>
+  <div class="bn-item" data-page="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Socios</div>
+  <div class="bn-item" data-page="agenda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>Agenda</div>
+  <div class="bn-item" data-page="pagos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Pagos</div>
+  <div class="bn-item" data-page="finanzas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Finanzas</div>
+</nav>
+
+<!-- ═══════ MODALES ═══════ -->
+
+<!-- SOCIO -->
+<div class="modal-overlay" id="mSocio">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-title"><span id="mSocioTitle">Nuevo Socio</span><span class="modal-x" onclick="closeModal('mSocio')">×</span></div>
+    <input type="hidden" id="cf_id">
+    <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px">
+      <div>
+        <div class="av-wrap" id="avDrop"><div id="avPH" style="display:flex;flex-direction:column;align-items:center;color:var(--muted);font-size:9px;gap:3px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>FOTO</div><img id="avImg" src="" alt="" style="display:none"><input type="file" id="avInput" accept="image/*" style="display:none"></div>
+        <div style="font-size:9px;color:var(--muted);text-align:center;margin-top:4px">clic para subir</div>
+      </div>
+      <div class="fg" style="flex:1">
+        <div class="fgrp"><label>Nombre completo *</label><input id="cf_nombre" placeholder="Nombre y apellido"></div>
+        <div class="fgrp"><label>DNI / ID</label><input id="cf_dni" placeholder="12345678"></div>
+        <div class="fgrp"><label>Email</label><input id="cf_email" type="email" placeholder="email@ejemplo.com"></div>
+        <div class="fgrp"><label>Teléfono</label><input id="cf_tel" placeholder="+54 9 ..."></div>
+        <div class="fgrp"><label>Fecha nacimiento</label><input id="cf_nac" type="date"></div>
+        <div class="fgrp"><label>Sexo</label><select id="cf_sexo"><option value="">Sin especificar</option><option>Masculino</option><option>Femenino</option><option>Otro</option></select></div>
+        <div class="fgrp"><label>Membresía</label><select id="cf_mem"><option value="">Sin membresía</option></select></div>
+        <div class="fgrp"><label>Inicio membresía</label><input id="cf_inicio" type="date"></div>
+        <div class="fgrp"><label>Objetivo</label><select id="cf_obj"><option>Bajar peso</option><option>Ganar músculo</option><option>Mantenimiento</option><option>Tonificar</option><option>Rendimiento deportivo</option><option>Rehabilitación</option><option>Bienestar general</option></select></div>
+        <div class="fgrp"><label>Nivel de experiencia</label><select id="cf_niv"><option>Principiante</option><option>Intermedio</option><option>Avanzado</option></select></div>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="fgrp"><label>Peso inicial (kg)</label><input id="cf_peso" type="number" step="0.1" placeholder="70.0"></div>
+      <div class="fgrp"><label>Altura (cm)</label><input id="cf_altura" type="number" placeholder="170"></div>
+      <div class="fgrp"><label>Programa de entrenamiento</label><select id="cf_prog"><option value="">Ninguno</option></select></div>
+      <div class="fgrp"><label>Plan de nutrición</label><select id="cf_nutri"><option value="">Ninguno</option></select></div>
+      <div class="fgrp"><label>Condición de salud / Lesiones</label><input id="cf_salud" placeholder="Rodilla, lumbar..."></div>
+      <div class="fgrp"><label>Contacto de emergencia</label><input id="cf_emerg" placeholder="Nombre y teléfono"></div>
+    </div>
+    <div class="fgrp" style="margin-top:12px"><label>Notas del entrenador</label><textarea id="cf_notas" placeholder="Observaciones..."></textarea></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeModal('mSocio')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveSocio()">Guardar socio</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETALLE SOCIO -->
+<div class="modal-overlay" id="mDetalle">
+  <div class="modal" style="max-width:740px">
+    <div class="modal-title"><span id="mDetalleTitle">Detalle</span><span class="modal-x" onclick="closeModal('mDetalle')">×</span></div>
+    <div id="detalleContent"></div>
+  </div>
+</div>
+
+<!-- PROGRAMA -->
+<div class="modal-overlay" id="mPrograma">
+  <div class="modal">
+    <div class="modal-title"><span id="mProgTitle">Nuevo Programa</span><span class="modal-x" onclick="closeModal('mPrograma')">×</span></div>
+    <input type="hidden" id="pf_id">
+    <div class="fg">
+      <div class="fgrp"><label>Nombre *</label><input id="pf_nombre" placeholder="Full Body Power..."></div>
+      <div class="fgrp"><label>Nivel</label><select id="pf_nivel"><option>Principiante</option><option>Intermedio</option><option>Avanzado</option></select></div>
+      <div class="fgrp"><label>Días / semana</label><input id="pf_dias" type="number" min="1" max="7" value="3"></div>
+      <div class="fgrp"><label>Duración sesión (min)</label><input id="pf_duracion" type="number" value="60" min="15"></div>
+      <div class="fgrp"><label>Objetivo</label><select id="pf_obj"><option>Bajar peso</option><option>Ganar músculo</option><option>Fuerza</option><option>Resistencia</option><option>Tonificar</option><option>Rendimiento</option><option>Rehabilitación</option></select></div>
+      <div class="fgrp"><label>Modalidad</label><select id="pf_mod"><option>Pesas / Sala</option><option>Cardio</option><option>Funcional</option><option>CrossFit</option><option>Yoga / Pilates</option><option>Natación</option><option>Mixto</option></select></div>
+      <div class="fgrp" style="grid-column:1/-1"><label>Descripción / ejercicios</label><textarea id="pf_desc" placeholder="Series, repeticiones, descansos..."></textarea></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeModal('mPrograma')">Cancelar</button>
+      <button class="btn btn-accent" onclick="savePrograma()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- NUTRICIÓN -->
+<div class="modal-overlay" id="mNutri">
+  <div class="modal">
+    <div class="modal-title"><span id="mNutriTitle">Plan de Nutrición</span><span class="modal-x" onclick="closeModal('mNutri')">×</span></div>
+    <input type="hidden" id="nf_id">
+    <div class="fg">
+      <div class="fgrp"><label>Nombre del plan *</label><input id="nf_nombre" placeholder="Definición Lean..."></div>
+      <div class="fgrp"><label>Objetivo</label><select id="nf_obj"><option>Bajar peso</option><option>Ganar músculo</option><option>Mantenimiento</option><option>Rendimiento</option><option>Salud general</option></select></div>
+      <div class="fgrp"><label>Calorías / día (kcal)</label><input id="nf_cal" type="number" placeholder="2000" min="500"></div>
+      <div class="fgrp"><label>Proteína (g)</label><input id="nf_prot" type="number" placeholder="150"></div>
+      <div class="fgrp"><label>Carbohidratos (g)</label><input id="nf_carb" type="number" placeholder="200"></div>
+      <div class="fgrp"><label>Grasas (g)</label><input id="nf_gras" type="number" placeholder="60"></div>
+      <div class="fgrp"><label>Comidas / día</label><input id="nf_com" type="number" placeholder="4" min="1" max="10"></div>
+      <div class="fgrp"><label>Restricciones / alergias</label><input id="nf_rest" placeholder="Gluten, lactosa..."></div>
+      <div class="fgrp" style="grid-column:1/-1"><label>Detalle del plan</label><textarea id="nf_desc" placeholder="Desayuno, almuerzo, merienda, cena..."></textarea></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeModal('mNutri')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveNutri()">Guardar plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- AVANCE -->
+<div class="modal-overlay" id="mAvance">
+  <div class="modal">
+    <div class="modal-title">Registrar Medición <span class="modal-x" onclick="closeModal('mAvance')">×</span></div>
+    <div class="fg">
+      <div class="fgrp"><label>Socio *</label><select id="av_c"></select></div>
+      <div class="fgrp"><label>Fecha *</label><input id="av_fecha" type="date"></div>
+      <div class="fgrp"><label>Peso (kg)</label><input id="av_peso" type="number" step="0.1" placeholder="70.0"></div>
+      <div class="fgrp"><label>% Grasa corporal</label><input id="av_grasa" type="number" step="0.1" placeholder="18.5"></div>
+      <div class="fgrp"><label>% Masa muscular</label><input id="av_musc" type="number" step="0.1" placeholder="40.0"></div>
+      <div class="fgrp"><label>IMC</label><input id="av_imc" type="number" step="0.1" placeholder="22.4"></div>
+      <div class="fgrp"><label>Cintura (cm)</label><input id="av_cin" type="number" step="0.5"></div>
+      <div class="fgrp"><label>Cadera (cm)</label><input id="av_cad" type="number" step="0.5"></div>
+      <div class="fgrp"><label>Pecho (cm)</label><input id="av_pecho" type="number" step="0.5"></div>
+      <div class="fgrp"><label>Hombros (cm)</label><input id="av_hom" type="number" step="0.5"></div>
+      <div class="fgrp"><label>Bícep der. (cm)</label><input id="av_bic" type="number" step="0.5"></div>
+      <div class="fgrp"><label>Muslo der. (cm)</label><input id="av_muslo" type="number" step="0.5"></div>
+      <div class="fgrp"><label>Pantorrilla (cm)</label><input id="av_pant" type="number" step="0.5"></div>
+      <div class="fgrp"><label>Presión arterial</label><input id="av_pres" placeholder="120/80"></div>
+      <div class="fgrp" style="grid-column:1/-1"><label>Observaciones</label><textarea id="av_obs" placeholder="Avances, recomendaciones..."></textarea></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeModal('mAvance')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveAvance()">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CLASE -->
+<div class="modal-overlay" id="mClase">
+  <div class="modal">
+    <div class="modal-title">Nueva Clase / Turno <span class="modal-x" onclick="closeModal('mClase')">×</span></div>
+    <div class="fg">
+      <div class="fgrp"><label>Nombre *</label><input id="cl_nombre" placeholder="CrossFit, Yoga, Spinning..."></div>
+      <div class="fgrp"><label>Instructor</label><input id="cl_inst" placeholder="Nombre del profesor"></div>
+      <div class="fgrp"><label>Fecha *</label><input id="cl_fecha" type="date"></div>
+      <div class="fgrp"><label>Hora inicio</label><input id="cl_hora" type="time" value="08:00"></div>
+      <div class="fgrp"><label>Duración (min)</label><input id="cl_dur" type="number" value="60" min="15"></div>
+      <div class="fgrp"><label>Capacidad máx.</label><input id="cl_cap" type="number" value="15" min="1"></div>
+      <div class="fgrp"><label>Sala / Espacio</label><input id="cl_sala" placeholder="Sala 1, Patio..."></div>
+      <div class="fgrp"><label>Tipo</label><select id="cl_tipo"><option>Grupal</option><option>Personal</option><option>Semi-personal</option><option>Online</option></select></div>
+      <div class="fgrp"><label>Modalidad</label><select id="cl_mod"><option>Musculación</option><option>Cardio</option><option>Funcional</option><option>CrossFit</option><option>Yoga</option><option>Pilates</option><option>Spinning</option><option>Natación</option><option>Zumba / Baile</option><option>Artes marciales</option><option>Otro</option></select></div>
+      <div class="fgrp"><label>Nivel</label><select id="cl_niv"><option>Todos los niveles</option><option>Principiante</option><option>Intermedio</option><option>Avanzado</option></select></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeModal('mClase')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveClase()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGO -->
+<div class="modal-overlay" id="mPago">
+  <div class="modal">
+    <div class="modal-title">Registrar Pago <span class="modal-x" onclick="closeModal('mPago')">×</span></div>
+    <div class="fg">
+      <div class="fgrp"><label>Socio *</label><select id="pg_c"></select></div>
+      <div class="fgrp"><label>Fecha *</label><input id="pg_fecha" type="date"></div>
+      <div class="fgrp"><label>Concepto</label><select id="pg_con"><option>Membresía mensual</option><option>Membresía trimestral</option><option>Membresía semestral</option><option>Membresía anual</option><option>Clase suelta</option><option>Entrenamiento personal</option><option>Plan de nutrición</option><option>Evaluación física</option><option>Suplementos</option><option>Otro</option></select></div>
+      <div class="fgrp"><label>Monto ($) *</label><input id="pg_monto" type="number" step="0.01" min="0" placeholder="0.00"></div>
+      <div class="fgrp"><label>Método de pago</label><select id="pg_met"><option>Efectivo</option><option>Transferencia</option><option>Tarjeta débito</option><option>Tarjeta crédito</option><option>MercadoPago</option><option>Cheque</option><option>Otro</option></select></div>
+      <div class="fgrp"><label>Estado</label><select id="pg_est"><option>Pagado</option><option>Pendiente</option><option>Parcial</option><option>Devuelto</option></select></div>
+      <div class="fgrp" style="grid-column:1/-1"><label>Observaciones</label><input id="pg_obs" placeholder="N° recibo, cuotas..."></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeModal('mPago')">Cancelar</button>
+      <button class="btn btn-accent" onclick="savePago()">Registrar pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- GASTO -->
+<div class="modal-overlay" id="mGasto">
+  <div class="modal">
+    <div class="modal-title">Registrar Gasto <span class="modal-x" onclick="closeModal('mGasto')">×</span></div>
+    <div class="fg">
+      <div class="fgrp"><label>Fecha *</label><input id="gf_fecha" type="date"></div>
+      <div class="fgrp"><label>Categoría</label><select id="gf_cat"><option>Alquiler</option><option>Sueldos / Honorarios</option><option>Equipamiento</option><option>Mantenimiento</option><option>Servicios (luz/agua/gas)</option><option>Marketing</option><option>Insumos</option><option>Seguros</option><option>Impuestos</option><option>Software</option><option>Otro</option></select></div>
+      <div class="fgrp"><label>Descripción</label><input id="gf_desc" placeholder="Detalle del gasto"></div>
+      <div class="fgrp"><label>Monto ($) *</label><input id="gf_monto" type="number" step="0.01" min="0" placeholder="0.00"></div>
+      <div class="fgrp"><label>Proveedor</label><input id="gf_prov" placeholder="Empresa o persona"></div>
+      <div class="fgrp"><label>N° comprobante</label><input id="gf_comp" placeholder="FA-0001..."></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeModal('mGasto')">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveGasto()">Registrar gasto</button>
+    </div>
+  </div>
+</div>
+
+<!-- config.js debe cargarse ANTES que app.js -->
+<!-- Generalo ejecutando: node generate-config.js -->
+<script src="config.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "gym-os",
+  "version": "2.1.0",
+  "description": "Software de administración para gimnasios",
+  "main": "index.js",
+  "scripts": {
+    "build": "node generate-config.js"
+  },
+  "keywords": [
+    "gym",
+    "fitness",
+    "management"
+  ],
+  "author": "",
+  "license": "MIT"
+}
