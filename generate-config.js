@@ -1,21 +1,8 @@
-/**
- * GYM OS v2.1 — Generador de config.js
- * Archivo: generate-config.js
- *
- * Uso:
- *   node generate-config.js
- *
- * Lee .env y genera config.js con las claves
- * en formato que app.js puede consumir en el browser.
- *
- * Requisito: Node.js 14+
- * No requiere dependencias externas.
- */
-
 const fs = require('fs');
+const path = require('path');
 
-// Claves por defecto (fallback)
-const keys = {
+// Claves hardcodeadas (sin depender de .env)
+const validKeys = {
   'GYMO-BSIC-2025-DEV1': 'basic',
   'GYMO-BSIC-2025-CUST001': 'basic',
   'GYMO-BSIC-2025-CUST002': 'basic',
@@ -29,11 +16,20 @@ const keys = {
   'GYMO-PREM-2025-CUST004': 'premium'
 };
 
-const config = `window.GYMOS_CONFIG = {
-  VALID_KEYS: ${JSON.stringify(keys, null, 2)},
-  APP_VERSION: '2.1.0',
-  APP_NAME: 'GYM OS'
+const keyCount = Object.keys(validKeys).length;
+const basicCount = Object.values(validKeys).filter(v => v === 'basic').length;
+const premiumCount = Object.values(validKeys).filter(v => v === 'premium').length;
+
+const configContent = `window.GYMOS_CONFIG = {
+  appName: 'GYM OS',
+  appVersion: '2.1.0',
+  env: 'production',
+  VALID_KEYS: ${JSON.stringify(validKeys, null, 2)}
 };`;
 
-fs.writeFileSync('public/config.js', config);
-console.log('✅ config.js generado con ' + Object.keys(keys).length + ' claves');
+const configPath = path.join(__dirname, 'public', 'config.js');
+fs.writeFileSync(configPath, configContent, 'utf8');
+
+console.log(`✅ config.js generado con ${keyCount} claves`);
+console.log(`   ${basicCount} básicas`);
+console.log(`   ${premiumCount} premium`);
