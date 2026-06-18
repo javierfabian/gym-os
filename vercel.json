@@ -1,17 +1,5 @@
 {
   "buildCommand": "node generate-config.js",
-  "outputDirectory": "public",
-  "env": [
-    "BASIC_KEY_1",
-    "BASIC_KEY_2",
-    "BASIC_KEY_3",
-    "BASIC_KEY_4",
-    "BASIC_KEY_5",
-    "PREMIUM_KEY_1",
-    "PREMIUM_KEY_2",
-    "PREMIUM_KEY_3",
-    "PREMIUM_KEY_4",
-    "DEV_BASIC_KEY",
-    "DEV_PREMIUM_KEY"
-  ]
+  "outputDirectory": "public"
+  
 }
