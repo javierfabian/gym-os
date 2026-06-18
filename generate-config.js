@@ -12,70 +12,28 @@
  * No requiere dependencias externas.
  */
 
-const fs   = require('fs');
-const path = require('path');
+const fs = require('fs');
 
-// ── Leer .env ──────────────────────────────────────
-const envPath = path.join(__dirname, '.env');
-if (!fs.existsSync(envPath)) {
-  console.error('❌ No se encontró .env — creá el archivo primero.');
-  process.exit(1);
-}
-
-const envContent = fs.readFileSync(envPath, 'utf8');
-const env = {};
-
-envContent.split('\n').forEach(line => {
-  line = line.trim();
-  if (!line || line.startsWith('#')) return;
-  const [key, ...rest] = line.split('=');
-  if (key && rest.length) env[key.trim()] = rest.join('=').trim();
-});
-
-// ── Construir VALID_KEYS ───────────────────────────
-const validKeys = {};
-
-Object.entries(env).forEach(([key, value]) => {
-  if (!value) return;
-  if (key.startsWith('BASIC_KEY_') || key === 'DEV_BASIC_KEY') {
-    validKeys[value] = 'basic';
-  } else if (key.startsWith('PREMIUM_KEY_') || key === 'DEV_PREMIUM_KEY') {
-    validKeys[value] = 'premium';
-  }
-});
-
-const keyCount = Object.keys(validKeys).length;
-if (keyCount === 0) {
-  console.error('❌ No se encontraron claves en .env. Verificá el formato.');
-  process.exit(1);
-}
-
-// ── Generar config.js ─────────────────────────────
-const configContent = `/**
- * GYM OS v2.1 — Configuración generada automáticamente
- * Archivo: config.js
- *
- * ⚠ NO editar manualmente — usar generate-config.js
- * ⚠ NO subir a Git/GitHub — agregar a .gitignore
- *
- * Generado: ${new Date().toLocaleString('es-AR')}
- * Total claves: ${keyCount} (${Object.values(validKeys).filter(v=>v==='basic').length} básicas, ${Object.values(validKeys).filter(v=>v==='premium').length} premium)
- */
-
-const GYMOS_CONFIG = {
-  appName:    '${env.APP_NAME    || 'GYM OS'}',
-  appVersion: '${env.APP_VERSION || '2.1'}',
-  env:        '${env.APP_ENV     || 'production'}',
-
-  VALID_KEYS: ${JSON.stringify(validKeys, null, 4)}
+// Claves por defecto (fallback)
+const keys = {
+  'GYMO-BSIC-2025-DEV1': 'basic',
+  'GYMO-BSIC-2025-CUST001': 'basic',
+  'GYMO-BSIC-2025-CUST002': 'basic',
+  'GYMO-BSIC-2025-CUST003': 'basic',
+  'GYMO-BSIC-2025-CUST004': 'basic',
+  'GYMO-BSIC-2025-CUST005': 'basic',
+  'GYMO-PREM-2025-DEV1': 'premium',
+  'GYMO-PREM-2025-CUST001': 'premium',
+  'GYMO-PREM-2025-CUST002': 'premium',
+  'GYMO-PREM-2025-CUST003': 'premium',
+  'GYMO-PREM-2025-CUST004': 'premium'
 };
-`;
 
-const configPath = path.join(__dirname, 'config.js');
-fs.writeFileSync(configPath, configContent, 'utf8');
+const config = `window.GYMOS_CONFIG = {
+  VALID_KEYS: ${JSON.stringify(keys, null, 2)},
+  APP_VERSION: '2.1.0',
+  APP_NAME: 'GYM OS'
+};`;
 
-console.log(`✅ config.js generado con ${keyCount} clave(s):`);
-Object.entries(validKeys).forEach(([k, v]) => {
-  console.log(`   ${v === 'premium' ? '★' : '✓'} [${v.toUpperCase().padEnd(7)}] ${k}`);
-});
-console.log('\n→ Abrí index.html con Live Server para probar.');
+fs.writeFileSync('public/config.js', config);
+console.log('✅ config.js generado con ' + Object.keys(keys).length + ' claves');
